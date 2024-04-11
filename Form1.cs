@@ -309,12 +309,19 @@ namespace Budżet
             }
             if (kwota > 0)
             {
-                MessageBox.Show("Pomyślnie wykonano automatyczny przelew");
-                listaPlatnosci.Add(placenieInfo);
-                double stan = Konwersja(stankonta.Text);
-                stan -= kwota;
-                stankonta.Text = stan.ToString("0.00", polskaKultura) + "zł";
-                historia_konta.Items.Add($"typ: przelew automatyczny | -{kwota.ToString("0.00", polskaKultura)}zł");
+                if (Konwersja(stankonta.Text) >= kwota)
+                {
+                    MessageBox.Show("Pomyślnie wykonano automatyczny przelew");
+                    listaPlatnosci.Add(placenieInfo);
+                    double stan = Konwersja(stankonta.Text);
+                    stan -= kwota;
+                    stankonta.Text = stan.ToString("0.00", polskaKultura) + "zł";
+                    historia_konta.Items.Add($"typ: przelew automatyczny | -{kwota.ToString("0.00", polskaKultura)}zł");
+                }
+                else
+                {
+                    MessageBox.Show("Kwota przekracza budżet");
+                }
             }
             else if( kwota == 0 )
             {
@@ -325,6 +332,28 @@ namespace Budżet
                 MessageBox.Show("Płatność jest ujemna");
             }
         }
+
+        private void usun_wydatek_Click(object sender, EventArgs e)
+        {
+            var pairsToRemove = new List<TextBox>();
+
+            foreach (var pair in textBoxCheckBoxPairs)
+            {
+                if (pair.Value.Checked)
+                {
+                    pairsToRemove.Add(pair.Key);
+                }
+            }
+
+            foreach (var textBoxToRemove in pairsToRemove)
+            {
+                tabPage4.Controls.Remove(textBoxToRemove);
+                tabPage4.Controls.Remove(textBoxCheckBoxPairs[textBoxToRemove]);
+
+                textBoxCheckBoxPairs.Remove(textBoxToRemove);
+            }
+        }
+
 
 
         private void platonscch_CheckedChanged(object sender, EventArgs e)
