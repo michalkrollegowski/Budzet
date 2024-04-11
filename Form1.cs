@@ -27,6 +27,7 @@ namespace Budżet
             public double Kwota { get; set; }
             public string NumerKonta { get; set; }
             public string TytulPrzelewu { get; set; }
+            public bool czyautom {  get; set; }
         }
         public class PlacenieInfo
         {
@@ -34,6 +35,7 @@ namespace Budżet
             public string Kwota { get; set; }
         }
         private List<PrzelewInfo> listaPrzelewow = new List<PrzelewInfo>();
+        private List<PrzelewInfo> listaPrzelewowautom = new List<PrzelewInfo>();
         private List<PlacenieInfo> listaPlatnosci = new List<PlacenieInfo>();
         private void wyslij_Click(object sender, EventArgs e)
         {
@@ -44,7 +46,8 @@ namespace Budżet
                     NazwaOdbiorcy = nazwa_odbiorcy.Text,
                     Kwota = double.Parse(kwota_przelewu.Text),
                     NumerKonta = numer_konta.Text,
-                    TytulPrzelewu = tytul_przelewu.Text
+                    TytulPrzelewu = tytul_przelewu.Text,
+                    czyautom = false
                 };
                 PlacenieInfo placenieInfo = new PlacenieInfo
                 {
@@ -234,11 +237,20 @@ namespace Budżet
 
         private void nowy_wydatek_Click(object sender, EventArgs e)
         {
-            if (nazwa_odbiorcy.Text.Length <= 15)
+            PrzelewInfo przelewInfo = new PrzelewInfo
+            {
+                NazwaOdbiorcy = nazwa_odbiorcy.Text,
+                Kwota = double.Parse(kwota_przelewu.Text),
+                NumerKonta = numer_konta.Text,
+                TytulPrzelewu = tytul_przelewu.Text,
+                czyautom = true
+            };
+
+            if (nazwa_odbiorcy.Text.Length <= 15 && !(string.IsNullOrEmpty(nazwa_odbiorcy.Text) || string.IsNullOrEmpty(kwota_przelewu.Text) || string.IsNullOrEmpty(numer_konta.Text) || string.IsNullOrEmpty(tytul_przelewu.Text)))
             {
                 if (double.TryParse(kwota_przelewu.Text, out double kwota))
                 {
-                    if (kwota > 0)
+                    if (kwota > 0 && Konwersja(stankonta.Text) >= kwota)
                     {
 
 
@@ -258,7 +270,7 @@ namespace Budżet
                             tabPage4.Controls.Add(newTextBox);
 
                             textBoxCheckBoxPairs.Add(newTextBox, newCheckBox);
-
+                            listaPrzelewowautom.Add(przelewInfo);
                             currentX += margin;
 
                             if (currentX + spacingY > tabPage4.Width)
@@ -305,6 +317,7 @@ namespace Budżet
                 if (check.Value.Checked)
                 {
                     kwota += double.Parse(check.Key.Text);
+                    
                 }
             }
             if (kwota > 0)
@@ -312,6 +325,17 @@ namespace Budżet
                 if (Konwersja(stankonta.Text) >= kwota)
                 {
                     MessageBox.Show("Pomyślnie wykonano automatyczny przelew");
+                    foreach (var check in textBoxCheckBoxPairs)
+                    {
+                        if (check.Value.Checked)
+                        {
+                            foreach (var przelew in listaPrzelewowautom)
+                            {
+                                przelew.czyautom = true;
+                                listaPrzelewowautom.Add(przelew);
+                            }
+                        }
+                    }
                     listaPlatnosci.Add(placenieInfo);
                     double stan = Konwersja(stankonta.Text);
                     stan -= kwota;
@@ -402,7 +426,7 @@ namespace Budżet
                         historia_transakcji.Items.Add($"Nazwa odbiorcy: {przelew.NazwaOdbiorcy}, Kwota: {przelew.Kwota} zł, Tytuł Przelewu: {przelew.TytulPrzelewu}");
                     }
                 }
-                if (nazwa_odbiorcyr.Checked)
+                else if (nazwa_odbiorcyr.Checked)
                 {
                     var wyniki = listaPrzelewow.Where(p => p.NazwaOdbiorcy == fraza.Text);
 
@@ -411,7 +435,7 @@ namespace Budżet
                         historia_transakcji.Items.Add($"Nazwa odbiorcy: {przelew.NazwaOdbiorcy}, Kwota: {przelew.Kwota} zł, Tytuł Przelewu: {przelew.TytulPrzelewu}");
                     }
                 }
-                if (kwota_przelewur.Checked)
+                else if (kwota_przelewur.Checked)
                 {
                     var wyniki = listaPrzelewow.Where(p => p.Kwota == double.Parse(fraza.Text));
 
@@ -420,7 +444,7 @@ namespace Budżet
                         historia_transakcji.Items.Add($"Nazwa odbiorcy: {przelew.NazwaOdbiorcy}, Kwota: {przelew.Kwota} zł, Tytuł Przelewu: {przelew.TytulPrzelewu}");
                     }
                 }
-                if (tytul_przelewur.Checked)
+                else if (tytul_przelewur.Checked)
                 {
                     var wyniki = listaPrzelewow.Where(p => p.TytulPrzelewu == fraza.Text);
 
@@ -429,8 +453,11 @@ namespace Budżet
                         historia_transakcji.Items.Add($"Nazwa odbiorcy: {przelew.NazwaOdbiorcy}, Kwota: {przelew.Kwota} zł, Tytuł Przelewu: {przelew.TytulPrzelewu}");
                     }
                 }
-            }
-            if (platonscch.Checked)
+                else
+                {
+                    MessageBox.Show("Nie wybrano opcji przelewu");
+                }
+            }else if (platonscch.Checked)
             {
                 if (typ_platonscir.Checked)
                 {
@@ -441,7 +468,7 @@ namespace Budżet
                         historia_transakcji.Items.Add($"Typ: {platnosc.Typplacy}, Kwota: {platnosc.Kwota} zł");
                     }
                 }
-                if (kwota_platnoscir.Checked)
+                else if (kwota_platnoscir.Checked)
                 {
                     var wyniki = listaPlatnosci.Where(p => p.Kwota == fraza.Text);
 
@@ -450,6 +477,14 @@ namespace Budżet
                         historia_transakcji.Items.Add($"Typ: {platnosc.Typplacy}, Kwota: {platnosc.Kwota} zł");
                     }
                 }
+                else
+                {
+                    MessageBox.Show("Nie wybrano opcji platnosci");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Nic nie wybrano");
             }
         }
 
