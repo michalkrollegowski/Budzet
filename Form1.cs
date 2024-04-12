@@ -49,15 +49,28 @@ namespace Budżet
         private List<PrzelewInfo> listaPrzelewowautom = new List<PrzelewInfo>();
         private List<PlacenieInfo> listaPlatnosci = new List<PlacenieInfo>();
         private Dictionary<Tuple<List<user>, string>, List<object>> usersDataDictionary = new Dictionary<Tuple<List<user>, string>, List<object>>();
-       
+        
         private void MainForm_Load(object sender, EventArgs e)
         {
-            usersDataDictionary = UserDataManager.LoadUsers("usersDataDictionary.json");
-            Sciaganieuser(users);
+            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string filePath = Path.Combine(documentsPath, "usersDataDictionary.json");
+            if (File.Exists(filePath))
+            {
+                MessageBox.Show("Ścieżka pliku jest poprawna");
+                usersDataDictionary = UserDataManager.LoadUsers(filePath);
+                Sciaganieuser(users);
+            }
+            else
+            {
+                MessageBox.Show("Ścieżka pliku nie jest poprawna");
+            }
         }
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            UserDataManager.SaveUsers(Laczenie(usersDataDictionary), "usersDataDictionary.json");
+            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string filePath = Path.Combine(documentsPath, "usersDataDictionary.json");
+            usersDataDictionary = Laczenie(usersDataDictionary);
+            UserDataManager.SaveUsers(usersDataDictionary, filePath);
         }
 
         public Dictionary<Tuple<List<user>, string>, List<object>> Laczenie(Dictionary<Tuple<List<user>, string>, List<object>> usersDataDictionary)
@@ -104,8 +117,10 @@ namespace Budżet
 
             public static Dictionary<Tuple<List<user>, string>, List<object>> LoadUsers(string filePath)
             {
+
                 if (File.Exists(filePath))
                 {
+                    MessageBox.Show("Pomyślnie Pobrano");
                     string json = File.ReadAllText(filePath);
                     return JsonConvert.DeserializeObject<Dictionary<Tuple<List<user>, string>, List<object>>>(json);
                 }
@@ -649,7 +664,7 @@ namespace Budżet
                 MessageBox.Show("Nie spełniono wymogów");
             }
         }
-
+        
     }
 
 }
