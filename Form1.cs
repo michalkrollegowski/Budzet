@@ -11,6 +11,9 @@ using System.Windows.Forms;
 using static Budżet.Form1;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using TextBox = System.Windows.Forms.TextBox;
+using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Budżet
 {
@@ -34,9 +37,85 @@ namespace Budżet
             public string Typplacy { get; set; }
             public string Kwota { get; set; }
         }
+        public class user
+        {
+            public string ImieiNazw { get; set; }
+            public string Haslo { get; set; }
+            public string NumerKonta { get; set; }
+            public string Pesel { get; set; }
+        }
+        private List<user> users = new List<user>();
         private List<PrzelewInfo> listaPrzelewow = new List<PrzelewInfo>();
         private List<PrzelewInfo> listaPrzelewowautom = new List<PrzelewInfo>();
         private List<PlacenieInfo> listaPlatnosci = new List<PlacenieInfo>();
+        private Dictionary<Tuple<List<user>, string>, List<object>> usersDataDictionary = new Dictionary<Tuple<List<user>, string>, List<object>>();
+       
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            usersDataDictionary = UserDataManager.LoadUsers("usersDataDictionary.json");
+            Sciaganieuser(users);
+        }
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            UserDataManager.SaveUsers(Laczenie(usersDataDictionary), "usersDataDictionary.json");
+        }
+
+        public Dictionary<Tuple<List<user>, string>, List<object>> Laczenie(Dictionary<Tuple<List<user>, string>, List<object>> usersDataDictionary)
+        {
+            usersDataDictionary.Add(new Tuple<List<user>, string>(users, "Przelewy"), new List<object>());
+            usersDataDictionary.Add(new Tuple<List<user>, string>(users, "PrzelewyAutom"), new List<object>());
+            usersDataDictionary.Add(new Tuple<List<user>, string>(users, "Platnosci"), new List<object>());
+
+
+            foreach (var przelew in listaPrzelewow)
+            {
+                var key = new Tuple<List<user>, string>(users, "Przelewy");
+                usersDataDictionary[key].Add(przelew);
+            }
+
+            foreach (var przelewautom in listaPrzelewowautom)
+            {
+                var key = new Tuple<List<user>, string>(users, "PrzelewyAutom");
+                usersDataDictionary[key].Add(przelewautom);
+            }
+
+            foreach (var platnosci in listaPlatnosci)
+            {
+                var key = new Tuple<List<user>, string>(users, "Platnosci");
+                usersDataDictionary[key].Add(platnosci);
+            }
+            return usersDataDictionary;
+        }
+        public List<user> Sciaganieuser(List<user> users)
+        {
+            foreach(var obiekt in usersDataDictionary)
+            {
+                users.AddRange(obiekt.Key.ToValueTuple().Item1);
+            }
+            return users;
+        }
+        public class UserDataManager
+        {
+            public static void SaveUsers(Dictionary<Tuple<List<user>, string>, List<object>> usersDataDictionary, string filePath)
+            {
+                string json = JsonConvert.SerializeObject(usersDataDictionary);
+                File.WriteAllText(filePath, json);
+            }
+
+            public static Dictionary<Tuple<List<user>, string>, List<object>> LoadUsers(string filePath)
+            {
+                if (File.Exists(filePath))
+                {
+                    string json = File.ReadAllText(filePath);
+                    return JsonConvert.DeserializeObject<Dictionary<Tuple<List<user>, string>, List<object>>>(json);
+                }
+                else
+                {
+                    return new Dictionary<Tuple<List<user>, string>, List<object>>();
+                }
+            }
+
+        }
         private void wyslij_Click(object sender, EventArgs e)
         {
             if (!(string.IsNullOrEmpty(nazwa_odbiorcy.Text) || string.IsNullOrEmpty(kwota_przelewu.Text) || string.IsNullOrEmpty(numer_konta.Text) || string.IsNullOrEmpty(tytul_przelewu.Text)))
@@ -485,6 +564,89 @@ namespace Budżet
             else
             {
                 MessageBox.Show("Nic nie wybrano");
+            }
+
+        }
+        private void logowanie_CheckedChanged(object sender, EventArgs e)
+        {
+            if (logowanie.Checked)
+            {
+                imieinazw.Text = "Login:";
+                podp.SetToolTip(nazwauzytkownia, "Podaj Pesel");
+                nazwauzytkownia.Text = "";
+                haslobox.Text = "";
+                przejdz_dalej.Visible = true;
+                doduztyk.Visible = false;
+                nazwauzytkownia.Visible = true;
+                imieinazw.Visible = true;
+                haslo.Visible = true;
+                haslobox.Visible = true;
+            }
+        }
+
+        private void rejestrowanie_CheckedChanged(object sender, EventArgs e)
+        {
+            if (rejestrowanie.Checked)
+            {
+                numer_kontalog.Visible = true;
+                pesel.Visible = true;
+                imieinazw.Text = "Imie i Nazwisko:";
+                nr_kon.Visible = true;
+                pes.Visible = true;
+                podp.SetToolTip(nazwauzytkownia, "Podaj Imie i Nazwisko");
+                wymhas.Active = true;
+                wymhas.SetToolTip(haslobox, "8 znaków");
+                przejdz_dalej.Visible = false;
+                doduztyk.Visible = true;
+                nazwauzytkownia.Text = "";
+                haslobox.Text = "";
+                numer_kontalog.Text = "";
+                pesel.Text = "";
+                nazwauzytkownia.Visible = true;
+                imieinazw.Visible = true;
+                haslo.Visible = true;
+                haslobox.Visible = true;
+            }
+            else
+            {
+                numer_kontalog.Visible = false;
+                pesel.Visible = false;
+                nr_kon.Visible = false;
+                pes.Visible = false;
+                wymhas.Active = false;
+            }
+        }
+
+        private void przejdz_dalej_Click(object sender, EventArgs e)
+        {
+            foreach (var usr in users)
+            {
+                if (usr.Pesel == nazwauzytkownia.Text && usr.Haslo == haslobox.Text)
+                {
+                    MessageBox.Show("Pomyślnie Zalogowano");
+                    pictureBox1.Visible = false;
+                    panel1.Visible = false;
+                }
+            }
+        }
+
+        private void doduztyk_Click(object sender, EventArgs e)
+        {
+            user user = new user
+            {
+                ImieiNazw = nazwauzytkownia.Text,
+                Haslo = haslobox.Text,
+                NumerKonta = numer_konta.Text,
+                Pesel = pesel.Text,
+            };
+            if ((!String.IsNullOrEmpty(nazwauzytkownia.Text)) && haslobox.Text.Length >= 8 && numer_kontalog.Text.Length >= 24 && pesel.Text.Length == 11)
+            {
+                users.Add(user);
+                MessageBox.Show("Pomyślnie Utworzono Użytkownika");
+            }
+            else
+            {
+                MessageBox.Show("Nie spełniono wymogów");
             }
         }
 
