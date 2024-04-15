@@ -12,7 +12,6 @@ using static Budżet.Form1;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using TextBox = System.Windows.Forms.TextBox;
 using Newtonsoft.Json;
-using System.Collections.Generic;
 using System.IO;
 
 namespace Budżet
@@ -22,6 +21,8 @@ namespace Budżet
         public Form1()
         {
             InitializeComponent();
+            this.Load += MainForm_Load;
+            this.FormClosing += MainForm_FormClosing;
         }
         CultureInfo polskaKultura = new CultureInfo("pl-PL");
         public class PrzelewInfo
@@ -48,88 +49,145 @@ namespace Budżet
         private List<PrzelewInfo> listaPrzelewow = new List<PrzelewInfo>();
         private List<PrzelewInfo> listaPrzelewowautom = new List<PrzelewInfo>();
         private List<PlacenieInfo> listaPlatnosci = new List<PlacenieInfo>();
-        private Dictionary<Tuple<List<user>, string>, List<object>> usersDataDictionary = new Dictionary<Tuple<List<user>, string>, List<object>>();
-        
+        private Dictionary<int, List<object>> usersDataDictionary = new Dictionary<int, List<object>>();
+        private int nextKey = 1;
+
         private void MainForm_Load(object sender, EventArgs e)
         {
-            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            MessageBox.Show("Witamy w Programie!!!");
+            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             string filePath = Path.Combine(documentsPath, "usersDataDictionary.json");
             if (File.Exists(filePath))
             {
                 MessageBox.Show("Ścieżka pliku jest poprawna");
                 usersDataDictionary = UserDataManager.LoadUsers(filePath);
                 Sciaganieuser(users);
+                Sciaganieprzelew(listaPrzelewow);
+                Sciaganieplacenie(listaPlatnosci);
             }
             else
             {
                 MessageBox.Show("Ścieżka pliku nie jest poprawna");
             }
         }
+
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            MessageBox.Show("Dowidzenia :-)");
+            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             string filePath = Path.Combine(documentsPath, "usersDataDictionary.json");
             usersDataDictionary = Laczenie(usersDataDictionary);
             UserDataManager.SaveUsers(usersDataDictionary, filePath);
         }
 
-        public Dictionary<Tuple<List<user>, string>, List<object>> Laczenie(Dictionary<Tuple<List<user>, string>, List<object>> usersDataDictionary)
+        public Dictionary<int, List<object>> Laczenie(Dictionary<int, List<object>> usersDataDictionary)
         {
-            usersDataDictionary.Add(new Tuple<List<user>, string>(users, "Przelewy"), new List<object>());
-            usersDataDictionary.Add(new Tuple<List<user>, string>(users, "PrzelewyAutom"), new List<object>());
-            usersDataDictionary.Add(new Tuple<List<user>, string>(users, "Platnosci"), new List<object>());
-
+            int key = nextKey++;
+            usersDataDictionary.Add(key, new List<object>());
 
             foreach (var przelew in listaPrzelewow)
             {
-                var key = new Tuple<List<user>, string>(users, "Przelewy");
                 usersDataDictionary[key].Add(przelew);
             }
 
             foreach (var przelewautom in listaPrzelewowautom)
             {
-                var key = new Tuple<List<user>, string>(users, "PrzelewyAutom");
                 usersDataDictionary[key].Add(przelewautom);
             }
 
             foreach (var platnosci in listaPlatnosci)
             {
-                var key = new Tuple<List<user>, string>(users, "Platnosci");
                 usersDataDictionary[key].Add(platnosci);
             }
+            foreach (var user in users)
+            {
+                usersDataDictionary[key].Add(user);
+            }
+
             return usersDataDictionary;
         }
+
         public List<user> Sciaganieuser(List<user> users)
         {
-            foreach(var obiekt in usersDataDictionary)
+            foreach (var obiekt in usersDataDictionary)
             {
-                users.AddRange(obiekt.Key.ToValueTuple().Item1);
+                foreach (var item in obiekt.Value)
+                {
+                    if (item is user)
+                    {
+                        users.Add((user)item);
+                    }
+                }
             }
             return users;
         }
+        public List<PrzelewInfo> Sciaganieprzelew(List<PrzelewInfo> przelew)
+        {
+            foreach (var obiekt in usersDataDictionary)
+            {
+                foreach (var item in obiekt.Value)
+                {
+                    if (item is PrzelewInfo)
+                    {
+                        listaPrzelewow.Add((PrzelewInfo)item);
+                    }
+                }
+            }
+            return przelew;
+        }
+        public List<PlacenieInfo> Sciaganieplacenie(List<PlacenieInfo> platnosc)
+        {
+            foreach (var obiekt in usersDataDictionary)
+            {
+                foreach (var item in obiekt.Value)
+                {
+                    if (item is PlacenieInfo)
+                    {
+                        listaPlatnosci.Add((PlacenieInfo)item);
+                    }
+                }
+            }
+            return platnosc;
+        }
+        public List<PrzelewInfo> Sciaganieprzelewautom(List<PrzelewInfo> przelewautom)
+        {
+            foreach (var obiekt in usersDataDictionary)
+            {
+                foreach (var item in obiekt.Value)
+                {
+                    if (item is PlacenieInfo)
+                    {
+                        PrzelewInfo przelew = (PrzelewInfo)item;
+                        if (przelew.czyautom)
+                        {
+                            listaPrzelewowautom.Add(przelew);
+                        }
+                    }
+                }
+            }
+            return przelewautom;
+        }
         public class UserDataManager
         {
-            public static void SaveUsers(Dictionary<Tuple<List<user>, string>, List<object>> usersDataDictionary, string filePath)
+            public static void SaveUsers(Dictionary<int, List<object>> usersDataDictionary, string filePath)
             {
                 string json = JsonConvert.SerializeObject(usersDataDictionary);
                 File.WriteAllText(filePath, json);
             }
 
-            public static Dictionary<Tuple<List<user>, string>, List<object>> LoadUsers(string filePath)
+            public static Dictionary<int, List<object>> LoadUsers(string filePath)
             {
-
                 if (File.Exists(filePath))
                 {
                     MessageBox.Show("Pomyślnie Pobrano");
                     string json = File.ReadAllText(filePath);
-                    return JsonConvert.DeserializeObject<Dictionary<Tuple<List<user>, string>, List<object>>>(json);
+                    return JsonConvert.DeserializeObject<Dictionary<int, List<object>>>(json);
                 }
                 else
                 {
-                    return new Dictionary<Tuple<List<user>, string>, List<object>>();
+                    return new Dictionary<int, List<object>>();
                 }
             }
-
         }
         private void wyslij_Click(object sender, EventArgs e)
         {
@@ -426,7 +484,6 @@ namespace Budżet
                             foreach (var przelew in listaPrzelewowautom)
                             {
                                 przelew.czyautom = true;
-                                listaPrzelewowautom.Add(przelew);
                             }
                         }
                     }
