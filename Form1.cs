@@ -64,6 +64,7 @@ namespace Budżet
                 Sciaganieuser(users);
                 Sciaganieprzelew(listaPrzelewow);
                 Sciaganieplacenie(listaPlatnosci);
+                Sciaganieprzelewautom(listaPrzelewowautom);
             }
             else
             {
@@ -693,7 +694,7 @@ namespace Budżet
         {
             foreach (var usr in users)
             {
-                if (usr.Pesel == nazwauzytkownia.Text && usr.Haslo == haslobox.Text)
+                if (usr.Pesel == nazwauzytkownia.Text.Trim() && usr.Haslo == haslobox.Text.Trim())
                 {
                     MessageBox.Show("Pomyślnie Zalogowano");
                     pictureBox1.Visible = false;
@@ -706,10 +707,10 @@ namespace Budżet
         {
             user user = new user
             {
-                ImieiNazw = nazwauzytkownia.Text,
-                Haslo = haslobox.Text,
-                NumerKonta = numer_konta.Text,
-                Pesel = pesel.Text,
+                ImieiNazw = nazwauzytkownia.Text.Trim(),
+                Haslo = haslobox.Text.Trim(),
+                NumerKonta = numer_konta.Text.Trim(),
+                Pesel = pesel.Text.Trim(),
             };
             if ((!String.IsNullOrEmpty(nazwauzytkownia.Text)) && haslobox.Text.Length >= 8 && numer_kontalog.Text.Length >= 24 && pesel.Text.Length == 11)
             {
