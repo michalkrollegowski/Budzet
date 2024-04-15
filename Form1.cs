@@ -90,16 +90,17 @@ namespace Budżet
             {
                 usersDataDictionary[key].Add(przelew);
             }
-
+            key = nextKey++;
             foreach (var przelewautom in listaPrzelewowautom)
             {
                 usersDataDictionary[key].Add(przelewautom);
             }
-
+            key = nextKey++;
             foreach (var platnosci in listaPlatnosci)
             {
                 usersDataDictionary[key].Add(platnosci);
             }
+            key = nextKey++;
             foreach (var user in users)
             {
                 usersDataDictionary[key].Add(user);
@@ -699,6 +700,7 @@ namespace Budżet
                     MessageBox.Show("Pomyślnie Zalogowano");
                     pictureBox1.Visible = false;
                     panel1.Visible = false;
+                    return;
                 }
             }
         }
