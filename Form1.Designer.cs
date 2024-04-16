@@ -31,12 +31,10 @@
             this.components = new System.ComponentModel.Container();
             this.tab = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.label16 = new System.Windows.Forms.Label();
+            this.konto_numerkonta = new System.Windows.Forms.Label();
             this.label15 = new System.Windows.Forms.Label();
-            this.label14 = new System.Windows.Forms.Label();
-            this.label13 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
+            this.konto_imie = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
             this.historia_konta = new System.Windows.Forms.ListView();
             this.stankonta = new System.Windows.Forms.Label();
@@ -133,12 +131,10 @@
             // tabPage1
             // 
             this.tabPage1.BackColor = System.Drawing.Color.Bisque;
-            this.tabPage1.Controls.Add(this.label16);
+            this.tabPage1.Controls.Add(this.konto_numerkonta);
             this.tabPage1.Controls.Add(this.label15);
-            this.tabPage1.Controls.Add(this.label14);
-            this.tabPage1.Controls.Add(this.label13);
             this.tabPage1.Controls.Add(this.label12);
-            this.tabPage1.Controls.Add(this.label2);
+            this.tabPage1.Controls.Add(this.konto_imie);
             this.tabPage1.Controls.Add(this.label10);
             this.tabPage1.Controls.Add(this.historia_konta);
             this.tabPage1.Controls.Add(this.stankonta);
@@ -150,14 +146,14 @@
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Stan Konta";
             // 
-            // label16
+            // konto_numerkonta
             // 
-            this.label16.AutoSize = true;
-            this.label16.Location = new System.Drawing.Point(88, 240);
-            this.label16.Name = "label16";
-            this.label16.Size = new System.Drawing.Size(112, 13);
-            this.label16.TabIndex = 9;
-            this.label16.Text = "1234 5678 9012 3456";
+            this.konto_numerkonta.AutoSize = true;
+            this.konto_numerkonta.Location = new System.Drawing.Point(88, 240);
+            this.konto_numerkonta.Name = "konto_numerkonta";
+            this.konto_numerkonta.Size = new System.Drawing.Size(112, 13);
+            this.konto_numerkonta.TabIndex = 9;
+            this.konto_numerkonta.Text = "1234 5678 9012 3456";
             // 
             // label15
             // 
@@ -168,41 +164,23 @@
             this.label15.TabIndex = 8;
             this.label15.Text = "numer konta:";
             // 
-            // label14
-            // 
-            this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(89, 212);
-            this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(74, 13);
-            this.label14.TabIndex = 7;
-            this.label14.Text = "Król-Łęgowski";
-            // 
-            // label13
-            // 
-            this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(28, 212);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(54, 13);
-            this.label13.TabIndex = 6;
-            this.label13.Text = "nazwisko:";
-            // 
             // label12
             // 
             this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(54, 189);
+            this.label12.Location = new System.Drawing.Point(13, 208);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(28, 13);
             this.label12.TabIndex = 5;
             this.label12.Text = "imie:";
             // 
-            // label2
+            // konto_imie
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(88, 189);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(40, 13);
-            this.label2.TabIndex = 4;
-            this.label2.Text = "Michał";
+            this.konto_imie.AutoSize = true;
+            this.konto_imie.Location = new System.Drawing.Point(47, 209);
+            this.konto_imie.Name = "konto_imie";
+            this.konto_imie.Size = new System.Drawing.Size(40, 13);
+            this.konto_imie.TabIndex = 4;
+            this.konto_imie.Text = "Michał";
             // 
             // label10
             // 
@@ -910,16 +888,16 @@
             this.panel1.Controls.Add(this.pesel);
             this.panel1.Controls.Add(this.haslobox);
             this.panel1.Controls.Add(this.numer_kontalog);
-            this.panel1.Location = new System.Drawing.Point(21, 29);
+            this.panel1.Location = new System.Drawing.Point(36, 25);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(744, 391);
+            this.panel1.Size = new System.Drawing.Size(752, 391);
             this.panel1.TabIndex = 13;
             // 
             // pictureBox1
             // 
-            this.pictureBox1.Location = new System.Drawing.Point(1, 1);
+            this.pictureBox1.Location = new System.Drawing.Point(1, 0);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(816, 445);
+            this.pictureBox1.Size = new System.Drawing.Size(823, 445);
             this.pictureBox1.TabIndex = 2;
             this.pictureBox1.TabStop = false;
             // 
@@ -928,7 +906,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.ClientSize = new System.Drawing.Size(819, 450);
+            this.ClientSize = new System.Drawing.Size(825, 450);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.odswiez);
@@ -1001,12 +979,10 @@
         private System.Windows.Forms.ListView historia_przelewow;
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.Button nowy_wydatek;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label label14;
-        private System.Windows.Forms.Label label13;
+        private System.Windows.Forms.Label konto_imie;
         private System.Windows.Forms.Label label12;
         private System.Windows.Forms.Label label15;
-        private System.Windows.Forms.Label label16;
+        private System.Windows.Forms.Label konto_numerkonta;
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.ToolTip toolTip2;
         private System.Windows.Forms.ToolTip toolTip3;

@@ -14,6 +14,7 @@ using TextBox = System.Windows.Forms.TextBox;
 using Newtonsoft.Json;
 using System.IO;
 using Newtonsoft.Json.Linq;
+using System.Xml.Linq;
 
 namespace Budżet
 {
@@ -51,7 +52,7 @@ namespace Budżet
         private List<PrzelewInfo> listaPrzelewowautom = new List<PrzelewInfo>();
         private List<PlacenieInfo> listaPlatnosci = new List<PlacenieInfo>();
         private Dictionary<int, List<object>> usersDataDictionary = new Dictionary<int, List<object>>();
-
+        private int nextkey = 1;
         private void MainForm_Load(object sender, EventArgs e)
         {
             MessageBox.Show("Witamy w Programie!!!");
@@ -84,7 +85,7 @@ namespace Budżet
 
         public Dictionary<int, List<object>> Laczenie(Dictionary<int, List<object>> usersDataDictionary)
         {
-            int key = 1;
+            int key = nextkey++;
 
             foreach (var user in users)
             {
@@ -94,7 +95,6 @@ namespace Budżet
                 if (!usersDataDictionary[key].Contains(user))
                     usersDataDictionary[key].Add(user);
 
-                key++;
             }
 
             foreach (var przelew in listaPrzelewow)
@@ -105,7 +105,6 @@ namespace Budżet
                 if (!usersDataDictionary[key].Contains(przelew))
                     usersDataDictionary[key].Add(przelew);
 
-                key++;
             }
 
             foreach (var przelewautom in listaPrzelewowautom)
@@ -116,7 +115,6 @@ namespace Budżet
                 if (!usersDataDictionary[key].Contains(przelewautom))
                     usersDataDictionary[key].Add(przelewautom);
 
-                key++;
             }
 
             foreach (var platnosc in listaPlatnosci)
@@ -127,7 +125,6 @@ namespace Budżet
                 if (!usersDataDictionary[key].Contains(platnosc))
                     usersDataDictionary[key].Add(platnosc);
 
-                key++;
             }
 
             return usersDataDictionary;
@@ -138,62 +135,136 @@ namespace Budżet
         {
             foreach (var obiekt in usersDataDictionary)
             {
-                foreach (var item in obiekt.Value.Cast<JObject>())
+                foreach (var item in obiekt.Value)
                 {
-                    if (IsValidUserObject(item))
+                    if (item is IEnumerable<object>)
                     {
-                        user newUser = item.ToObject<user>();
-                        users.Add(newUser);
+                        foreach (Object poditem in (IEnumerable<Object>)item)
+                        {
+                            if (IsValidUserObject(poditem))
+                            {
+                                user newUser = (user)poditem;
+                                users.Add(newUser);
+                            }
+                        }
                     }
+                    else
+                    {
+                        if (IsValidplatnoscObject(item))
+                        {
+                            user newuser = (user) item;
+                            users.Add(newuser);
+                        }
+                    }
+
                 }
             }
         }
-        private static bool IsValidUserObject(JObject obj)=>obj["ImieiNazw"] != null && obj["Haslo"] != null && obj["NumerKonta"] != null && obj["Pesel"] != null;
+
+        private static bool IsValidUserObject(Object obj)=>HasProperty(obj, "ImieiNazw") && HasProperty(obj, "Haslo") && HasProperty(obj,"NumerKonta") && HasProperty(obj,"Pesel");
         public void Sciaganieprzelew(List<PrzelewInfo> przelew)
         {
             foreach (var obiekt in usersDataDictionary)
             {
-                foreach (var item in obiekt.Value.Cast<JObject>())
+                foreach (var item in obiekt.Value)
                 {
-                    if (IsValidprzelewObject(item))
+                    if (item is IEnumerable<object>)
                     {
-                        PrzelewInfo newprzelew = item.ToObject<PrzelewInfo>();
-                        listaPrzelewow.Add(newprzelew);
+                        foreach (Object poditem in (IEnumerable<Object>)item)
+                        {
+                            if (IsValidprzelewObject(poditem))
+                            {
+                                if ((bool)(poditem.GetType().GetProperty("czyautom").GetValue(false)))
+                                {
+                                    PrzelewInfo newprzelew = (PrzelewInfo)poditem;
+                                    przelew.Add(newprzelew);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (IsValidplatnoscObject(item))
+                        {
+                            PrzelewInfo newprzelew = (PrzelewInfo) item;
+                            przelew.Add(newprzelew);
+                        }
                     }
                 }
             }
         }
-        private static bool IsValidprzelewObject(JObject obj)=> obj["NazwaOdbiorcy"] != null && obj["Kwota"] != null && obj["TytulPrzelewu"] != null && obj["czyautom"].Value<bool>() == false;
+        public static bool HasProperty(object obj, string propertyName)
+        {
+            if (obj == null)
+                return false;
+
+            var objectType = obj.GetType();
+            var property = objectType.GetProperty(propertyName);
+
+            return property != null;
+        }
+        private static bool IsValidprzelewObject(Object obj)=> HasProperty(obj,"Nazwa") &&  HasProperty(obj,"Kwota") && HasProperty(obj,"TytulPrzelewu") && HasProperty(obj,"czyautom");
         public void Sciaganieplacenie(List<PlacenieInfo> platnosc)
         {
             foreach (var obiekt in usersDataDictionary)
             {
-                foreach (var item in obiekt.Value.Cast<JObject>())
+                foreach (var item in obiekt.Value)
                 {
-                    if (IsValidplatnoscObject(item))
+                    if (item is IEnumerable<object>)
                     {
-                        PlacenieInfo newplatnosc = item.ToObject<PlacenieInfo>();
-                        listaPlatnosci.Add(newplatnosc);  
+                        foreach (Object poditem in (IEnumerable < Object >) item)
+                        {
+                            if (IsValidplatnoscObject(poditem))
+                            {
+                                PlacenieInfo newplatnosc = (PlacenieInfo)poditem;
+                                platnosc.Add(newplatnosc);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (IsValidplatnoscObject(item))
+                        {
+                            PlacenieInfo newplatnosc = (PlacenieInfo)item;
+                            platnosc.Add(newplatnosc);
+                        }
                     }
                 }
             }
         }
-        private static bool IsValidplatnoscObject(JObject obj) => obj["Typplacy"] != null && obj["Kwota"] != null;
+        private static bool IsValidplatnoscObject(Object obj) => HasProperty(obj,"Typplacy") && HasProperty(obj,"Kwota");
         public void Sciaganieprzelewautom(List<PrzelewInfo> przelewautom)
         {
             foreach (var obiekt in usersDataDictionary)
             {
-                foreach (var item in obiekt.Value.Cast<JObject>())
+                foreach (var item in obiekt.Value)
                 {
-                    if (IsValidprzelewautomObject(item))
+                    if (item is IEnumerable<object>)
                     {
-                        PrzelewInfo newprzelewautom = item.ToObject<PrzelewInfo>();
-                        listaPrzelewowautom.Add(newprzelewautom);
+                        foreach (Object poditem in (IEnumerable<Object>)item)
+                        {
+                            if (IsValidprzelewautomObject(poditem))
+                            {
+                                if ((bool)(poditem.GetType().GetProperty("czyautom").GetValue(true)))
+                                {
+                                    PrzelewInfo newplacenieautom = (PrzelewInfo)poditem;
+                                    przelewautom.Add(newplacenieautom);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (IsValidplatnoscObject(item))
+                        {
+                            PrzelewInfo newprzelew = (PrzelewInfo) item;
+                            przelewautom.Add(newprzelew);
+                        }
                     }
                 }
             }
         }
-        private static bool IsValidprzelewautomObject(JObject obj) => obj["NazwaOdbiorcy"] != null && obj["Kwota"] != null && obj["TytulPrzelewu"] != null && obj["czyautom"].Value<bool>() == true;
+        private static bool IsValidprzelewautomObject(Object obj) => HasProperty(obj,"NazwaOdbiorcy") && HasProperty(obj, "Kwota") && HasProperty(obj, "TytulPrzelewu") && HasProperty(obj,"czyautom");
         public class UserDataManager
         {
             public static void SaveUsers(Dictionary<int, List<object>> usersDataDictionary, string filePath)
@@ -218,65 +289,75 @@ namespace Budżet
         }
         private void wyslij_Click(object sender, EventArgs e)
         {
-            if (!(string.IsNullOrEmpty(nazwa_odbiorcy.Text) || string.IsNullOrEmpty(kwota_przelewu.Text) || string.IsNullOrEmpty(numer_konta.Text) || string.IsNullOrEmpty(tytul_przelewu.Text)))
+            foreach (var usr in users)
             {
-                PrzelewInfo przelewInfo = new PrzelewInfo
+                if (numer_konta.Text == usr.NumerKonta)
                 {
-                    NazwaOdbiorcy = nazwa_odbiorcy.Text,
-                    Kwota = double.Parse(kwota_przelewu.Text),
-                    NumerKonta = numer_konta.Text,
-                    TytulPrzelewu = tytul_przelewu.Text,
-                    czyautom = false
-                };
-                PlacenieInfo placenieInfo = new PlacenieInfo
-                {
-                    Typplacy = "przelew",
-                    Kwota = "-" + kwota_przelewu.Text + "zł"
-                };
-
-                if (double.TryParse(kwota_przelewu.Text, out double kwota))
-                {
-                    if (!double.IsNaN(kwota))
+                    if (!(string.IsNullOrEmpty(nazwa_odbiorcy.Text) || string.IsNullOrEmpty(kwota_przelewu.Text) || string.IsNullOrEmpty(numer_konta.Text) || string.IsNullOrEmpty(tytul_przelewu.Text)))
                     {
-                        if (kwota > 0)
+                        if (double.TryParse(kwota_przelewu.Text, out double kwota))
                         {
-                            if (kwota <= Konwersja(stankonta.Text))
+                            if (!double.IsNaN(kwota))
                             {
-                                MessageBox.Show("Pomyślnie wykonano przelew");
-                                listaPlatnosci.Add(placenieInfo);
-                                listaPrzelewow.Add(przelewInfo);
-                                double stan = Konwersja(stankonta.Text);
-                                stan -= kwota;
-                                stankonta.Text = stan.ToString("0.00", polskaKultura) + "zł";
+                                if (kwota > 0)
+                                {
+                                    if (kwota <= Konwersja(stankonta.Text))
+                                    {
+                                        PrzelewInfo przelewInfo = new PrzelewInfo
+                                        {
+                                            NazwaOdbiorcy = nazwa_odbiorcy.Text,
+                                            Kwota = double.Parse(kwota_przelewu.Text),
+                                            NumerKonta = numer_konta.Text,
+                                            TytulPrzelewu = tytul_przelewu.Text,
+                                            czyautom = false
+                                        };
+                                        PlacenieInfo placenieInfo = new PlacenieInfo
+                                        {
+                                            Typplacy = "przelew",
+                                            Kwota = "-" + kwota_przelewu.Text + "zł"
+                                        };
 
-                                nazwa_odbiorcy.Clear();
-                                kwota_przelewu.Clear();
-                                numer_konta.Clear();
-                                tytul_przelewu.Clear();
+                                        MessageBox.Show("Pomyślnie wykonano przelew");
+                                        listaPlatnosci.Add(placenieInfo);
+                                        listaPrzelewow.Add(przelewInfo);
+                                        double stan = Konwersja(stankonta.Text);
+                                        stan -= kwota;
+                                        stankonta.Text = stan.ToString("0.00", polskaKultura) + "zł";
+
+                                        nazwa_odbiorcy.Clear();
+                                        kwota_przelewu.Clear();
+                                        numer_konta.Clear();
+                                        tytul_przelewu.Clear();
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show("Za mały budżet do wykonania przelewu");
+                                    }
+                                }
+                                else if (kwota == 0)
+                                {
+                                    MessageBox.Show("Podano zerową kwotę");
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Podano ujemną kwotę");
+                                }
                             }
-                            else
-                            {
-                                MessageBox.Show("Za mały budżet do wykonania przelewu");
-                            }
-                        }
-                        else if (kwota == 0)
-                        {
-                            MessageBox.Show("Podano zerową kwotę");
                         }
                         else
                         {
-                            MessageBox.Show("Podano ujemną kwotę");
+                            MessageBox.Show("Podano zły format");
                         }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Nie wszystkie pola zostały uzupełnione");
                     }
                 }
                 else
                 {
-                    MessageBox.Show("Podano zły format");
+                    MessageBox.Show("Brak odbiorcy w użytkownikach");
                 }
-            }
-            else
-            {
-                MessageBox.Show("Nie wszystkie pola zostały uzupełnione");
             }
         }
         private void odswiez_Click(object sender, EventArgs e)
@@ -309,11 +390,6 @@ namespace Budżet
         }
         private void wplac_Click(object sender, EventArgs e)
         {
-            PlacenieInfo placenieInfo = new PlacenieInfo
-            {
-                Typplacy = "wpłata",
-                Kwota = "+" + wplata.Text + "zł"
-            };
             if (!string.IsNullOrEmpty(wplata.Text))
             {
                 if (double.TryParse(wplata.Text, out double kwota))
@@ -322,6 +398,11 @@ namespace Budżet
                     {
                         if (kwota > 0)
                         {
+                            PlacenieInfo placenieInfo = new PlacenieInfo
+                            {
+                                Typplacy = "wpłata",
+                                Kwota = "+" + wplata.Text + "zł"
+                            };
                             MessageBox.Show("POMYŚLNIE WYKONANO WPŁATĘ");
                             listaPlatnosci.Add(placenieInfo);
                             double stan = Konwersja(stankonta.Text);
@@ -356,11 +437,6 @@ namespace Budżet
 
         private void wyplac_Click(object sender, EventArgs e)
         {
-            PlacenieInfo placenieInfo = new PlacenieInfo
-            {
-                Typplacy = "wypłata",
-                Kwota = "-" + wyplata.Text + "zł"
-            };
             if (!string.IsNullOrEmpty(wyplata.Text))
             {
                 if (double.TryParse(wyplata.Text, out double kwota))
@@ -371,6 +447,11 @@ namespace Budżet
                         {
                             if (kwota <= double.Parse(wplata.Text))
                             {
+                                PlacenieInfo placenieInfo = new PlacenieInfo
+                                {
+                                    Typplacy = "wypłata",
+                                    Kwota = "-" + wyplata.Text + "zł"
+                                };
                                 MessageBox.Show("POMYŚLNIE WYKONANO WYPŁATĘ");
                                 listaPlatnosci.Add(placenieInfo);
                                 double stan = Konwersja(stankonta.Text);
@@ -416,80 +497,84 @@ namespace Budżet
 
         private void nowy_wydatek_Click(object sender, EventArgs e)
         {
-            PrzelewInfo przelewInfo = new PrzelewInfo
+            foreach (var usr in users)
             {
-                NazwaOdbiorcy = nazwa_odbiorcy.Text,
-                Kwota = double.Parse(kwota_przelewu.Text),
-                NumerKonta = numer_konta.Text,
-                TytulPrzelewu = tytul_przelewu.Text,
-                czyautom = true
-            };
-
-            if (nazwa_odbiorcy.Text.Length <= 15 && !(string.IsNullOrEmpty(nazwa_odbiorcy.Text) || string.IsNullOrEmpty(kwota_przelewu.Text) || string.IsNullOrEmpty(numer_konta.Text) || string.IsNullOrEmpty(tytul_przelewu.Text)))
-            {
-                if (double.TryParse(kwota_przelewu.Text, out double kwota))
+                if (numer_konta.Text == usr.NumerKonta)
                 {
-                    if (kwota > 0 && Konwersja(stankonta.Text) >= kwota)
+                    if (nazwa_odbiorcy.Text.Length <= 15 && !(string.IsNullOrEmpty(nazwa_odbiorcy.Text) || string.IsNullOrEmpty(kwota_przelewu.Text) || string.IsNullOrEmpty(numer_konta.Text) || string.IsNullOrEmpty(tytul_przelewu.Text)))
                     {
-
-
-                        if (currentY + spacingY < 290)
+                        if (double.TryParse(kwota_przelewu.Text, out double kwota))
                         {
-                            label17.Text = "";
-                            CheckBox newCheckBox = new CheckBox();
-                            TextBox newTextBox = new TextBox();
-
-                            newCheckBox.Text = nazwa_odbiorcy.Text;
-                            newTextBox.Text = kwota.ToString();
-
-                            newCheckBox.Location = new Point(currentX, currentY);
-                            newTextBox.Location = new Point(currentX, currentY + spacingY);
-
-                            tabPage4.Controls.Add(newCheckBox);
-                            tabPage4.Controls.Add(newTextBox);
-
-                            textBoxCheckBoxPairs.Add(newTextBox, newCheckBox);
-                            listaPrzelewowautom.Add(przelewInfo);
-                            currentX += margin;
-
-                            if (currentX + spacingY > tabPage4.Width)
+                            if (kwota > 0 && Konwersja(stankonta.Text) >= kwota)
                             {
-                                currentX = 50;
-                                currentY += newCheckBox.Height + spacingY;
+
+
+                                if (currentY + spacingY < 290)
+                                {
+                                    PrzelewInfo przelewInfo = new PrzelewInfo
+                                    {
+                                        NazwaOdbiorcy = nazwa_odbiorcy.Text,
+                                        Kwota = double.Parse(kwota_przelewu.Text),
+                                        NumerKonta = numer_konta.Text,
+                                        TytulPrzelewu = tytul_przelewu.Text,
+                                        czyautom = true
+                                    };
+                                    label17.Text = "";
+                                    CheckBox newCheckBox = new CheckBox();
+                                    TextBox newTextBox = new TextBox();
+
+                                    newCheckBox.Text = nazwa_odbiorcy.Text;
+                                    newTextBox.Text = kwota.ToString();
+
+                                    newCheckBox.Location = new Point(currentX, currentY);
+                                    newTextBox.Location = new Point(currentX, currentY + spacingY);
+
+                                    tabPage4.Controls.Add(newCheckBox);
+                                    tabPage4.Controls.Add(newTextBox);
+
+                                    textBoxCheckBoxPairs.Add(newTextBox, newCheckBox);
+                                    listaPrzelewowautom.Add(przelewInfo);
+                                    currentX += margin;
+
+                                    if (currentX + spacingY > tabPage4.Width)
+                                    {
+                                        currentX = 50;
+                                        currentY += newCheckBox.Height + spacingY;
+                                    }
+                                }
+                                else
+                                {
+                                    MessageBox.Show("NIE MOŻNA DODAĆ WIĘCEJ STAŁYCH WYDATKÓW");
+                                }
+                            }
+                            else if (kwota == 0)
+                            {
+                                MessageBox.Show("Podano zerową kwotę");
+                            }
+                            else
+                            {
+                                MessageBox.Show("Podano ujemną kwotę");
                             }
                         }
                         else
                         {
-                            MessageBox.Show("NIE MOŻNA DODAĆ WIĘCEJ STAŁYCH WYDATKÓW");
+                            MessageBox.Show("Zły format kwoty przelewu");
                         }
-                    }
-                    else if (kwota == 0)
-                    {
-                        MessageBox.Show("Podano zerową kwotę");
                     }
                     else
                     {
-                        MessageBox.Show("Podano ujemną kwotę");
+                        MessageBox.Show("Wprowadzono złe dane");
                     }
                 }
                 else
                 {
-                    MessageBox.Show("Zły format kwoty przelewu");
+                    MessageBox.Show("Brak odbiorcy w użytkownikach");
                 }
-            }
-            else
-            {
-                MessageBox.Show("Za długa nazwa odbiorcy");
             }
         }
 
         private void oplac_Click(object sender, EventArgs e)
         {
-            PlacenieInfo placenieInfo = new PlacenieInfo
-            {
-                Typplacy = "przelew automatyczny",
-                Kwota = "+" + wplata.Text + "zł"
-            };
             double kwota = 0;
             foreach(var check in textBoxCheckBoxPairs)
             {
@@ -503,6 +588,11 @@ namespace Budżet
             {
                 if (Konwersja(stankonta.Text) >= kwota)
                 {
+                    PlacenieInfo placenieInfo = new PlacenieInfo
+                    {
+                        Typplacy = "przelew automatyczny",
+                        Kwota = "+" + wplata.Text + "zł"
+                    };
                     MessageBox.Show("Pomyślnie wykonano automatyczny przelew");
                     foreach (var check in textBoxCheckBoxPairs)
                     {
@@ -725,6 +815,8 @@ namespace Budżet
                     MessageBox.Show("Pomyślnie Zalogowano");
                     pictureBox1.Visible = false;
                     panel1.Visible = false;
+                    konto_imie.Text = usr.ImieiNazw;
+                    konto_numerkonta.Text = usr.NumerKonta;
                     return;
                 }
             }
@@ -732,13 +824,6 @@ namespace Budżet
 
         private void doduztyk_Click(object sender, EventArgs e)
         {
-            user user = new user
-            {
-                ImieiNazw = nazwauzytkownia.Text.Trim(),
-                Haslo = haslobox.Text.Trim(),
-                NumerKonta = numer_kontalog.Text.Trim(),
-                Pesel = pesel.Text.Trim(),
-            };
             if ((!String.IsNullOrEmpty(nazwauzytkownia.Text)) && haslobox.Text.Length >= 8 && numer_kontalog.Text.Length >= 24 && pesel.Text.Length == 11)
             {
                 if (users.Any(u => u.Pesel == pesel.Text))
@@ -747,6 +832,13 @@ namespace Budżet
                 }
                 else
                 {
+                    user user = new user
+                    {
+                        ImieiNazw = nazwauzytkownia.Text.Trim(),
+                        Haslo = haslobox.Text.Trim(),
+                        NumerKonta = numer_kontalog.Text.Trim(),
+                        Pesel = pesel.Text.Trim(),
+                    };
                     users.Add(user);
                     MessageBox.Show("Pomyślnie Utworzono Użytkownika");
                 }
