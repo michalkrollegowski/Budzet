@@ -13,6 +13,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using TextBox = System.Windows.Forms.TextBox;
 using Newtonsoft.Json;
 using System.IO;
+using Newtonsoft.Json.Linq;
 
 namespace Budżet
 {
@@ -50,7 +51,6 @@ namespace Budżet
         private List<PrzelewInfo> listaPrzelewowautom = new List<PrzelewInfo>();
         private List<PlacenieInfo> listaPlatnosci = new List<PlacenieInfo>();
         private Dictionary<int, List<object>> usersDataDictionary = new Dictionary<int, List<object>>();
-        private int nextKey = 1;
 
         private void MainForm_Load(object sender, EventArgs e)
         {
@@ -65,6 +65,7 @@ namespace Budżet
                 Sciaganieprzelew(listaPrzelewow);
                 Sciaganieplacenie(listaPlatnosci);
                 Sciaganieprzelewautom(listaPrzelewowautom);
+                File.Delete(filePath);
             }
             else
             {
@@ -83,92 +84,116 @@ namespace Budżet
 
         public Dictionary<int, List<object>> Laczenie(Dictionary<int, List<object>> usersDataDictionary)
         {
-            int key = nextKey++;
-            usersDataDictionary.Add(key, new List<object>());
+            int key = 1;
+
+            foreach (var user in users)
+            {
+                if (!usersDataDictionary.ContainsKey(key))
+                    usersDataDictionary.Add(key, new List<object>());
+
+                if (!usersDataDictionary[key].Contains(user))
+                    usersDataDictionary[key].Add(user);
+
+                key++;
+            }
 
             foreach (var przelew in listaPrzelewow)
             {
-                usersDataDictionary[key].Add(przelew);
+                if (!usersDataDictionary.ContainsKey(key))
+                    usersDataDictionary.Add(key, new List<object>());
+
+                if (!usersDataDictionary[key].Contains(przelew))
+                    usersDataDictionary[key].Add(przelew);
+
+                key++;
             }
-            key = nextKey++;
+
             foreach (var przelewautom in listaPrzelewowautom)
             {
-                usersDataDictionary[key].Add(przelewautom);
+                if (!usersDataDictionary.ContainsKey(key))
+                    usersDataDictionary.Add(key, new List<object>());
+
+                if (!usersDataDictionary[key].Contains(przelewautom))
+                    usersDataDictionary[key].Add(przelewautom);
+
+                key++;
             }
-            key = nextKey++;
-            foreach (var platnosci in listaPlatnosci)
+
+            foreach (var platnosc in listaPlatnosci)
             {
-                usersDataDictionary[key].Add(platnosci);
-            }
-            key = nextKey++;
-            foreach (var user in users)
-            {
-                usersDataDictionary[key].Add(user);
+                if (!usersDataDictionary.ContainsKey(key))
+                    usersDataDictionary.Add(key, new List<object>());
+
+                if (!usersDataDictionary[key].Contains(platnosc))
+                    usersDataDictionary[key].Add(platnosc);
+
+                key++;
             }
 
             return usersDataDictionary;
         }
 
-        public List<user> Sciaganieuser(List<user> users)
+
+        public void Sciaganieuser(List<user> users)
         {
             foreach (var obiekt in usersDataDictionary)
             {
-                foreach (var item in obiekt.Value)
+                foreach (var item in obiekt.Value.Cast<JObject>())
                 {
-                    if (item is user)
+                    if (IsValidUserObject(item))
                     {
-                        users.Add((user)item);
+                        user newUser = item.ToObject<user>();
+                        users.Add(newUser);
                     }
                 }
             }
-            return users;
         }
-        public List<PrzelewInfo> Sciaganieprzelew(List<PrzelewInfo> przelew)
+        private static bool IsValidUserObject(JObject obj)=>obj["ImieiNazw"] != null && obj["Haslo"] != null && obj["NumerKonta"] != null && obj["Pesel"] != null;
+        public void Sciaganieprzelew(List<PrzelewInfo> przelew)
         {
             foreach (var obiekt in usersDataDictionary)
             {
-                foreach (var item in obiekt.Value)
+                foreach (var item in obiekt.Value.Cast<JObject>())
                 {
-                    if (item is PrzelewInfo)
+                    if (IsValidprzelewObject(item))
                     {
-                        listaPrzelewow.Add((PrzelewInfo)item);
+                        PrzelewInfo newprzelew = item.ToObject<PrzelewInfo>();
+                        listaPrzelewow.Add(newprzelew);
                     }
                 }
             }
-            return przelew;
         }
-        public List<PlacenieInfo> Sciaganieplacenie(List<PlacenieInfo> platnosc)
+        private static bool IsValidprzelewObject(JObject obj)=> obj["NazwaOdbiorcy"] != null && obj["Kwota"] != null && obj["TytulPrzelewu"] != null && obj["czyautom"].Value<bool>() == false;
+        public void Sciaganieplacenie(List<PlacenieInfo> platnosc)
         {
             foreach (var obiekt in usersDataDictionary)
             {
-                foreach (var item in obiekt.Value)
+                foreach (var item in obiekt.Value.Cast<JObject>())
                 {
-                    if (item is PlacenieInfo)
+                    if (IsValidplatnoscObject(item))
                     {
-                        listaPlatnosci.Add((PlacenieInfo)item);
+                        PlacenieInfo newplatnosc = item.ToObject<PlacenieInfo>();
+                        listaPlatnosci.Add(newplatnosc);  
                     }
                 }
             }
-            return platnosc;
         }
-        public List<PrzelewInfo> Sciaganieprzelewautom(List<PrzelewInfo> przelewautom)
+        private static bool IsValidplatnoscObject(JObject obj) => obj["Typplacy"] != null && obj["Kwota"] != null;
+        public void Sciaganieprzelewautom(List<PrzelewInfo> przelewautom)
         {
             foreach (var obiekt in usersDataDictionary)
             {
-                foreach (var item in obiekt.Value)
+                foreach (var item in obiekt.Value.Cast<JObject>())
                 {
-                    if (item is PlacenieInfo)
+                    if (IsValidprzelewautomObject(item))
                     {
-                        PrzelewInfo przelew = (PrzelewInfo)item;
-                        if (przelew.czyautom)
-                        {
-                            listaPrzelewowautom.Add(przelew);
-                        }
+                        PrzelewInfo newprzelewautom = item.ToObject<PrzelewInfo>();
+                        listaPrzelewowautom.Add(newprzelewautom);
                     }
                 }
             }
-            return przelewautom;
         }
+        private static bool IsValidprzelewautomObject(JObject obj) => obj["NazwaOdbiorcy"] != null && obj["Kwota"] != null && obj["TytulPrzelewu"] != null && obj["czyautom"].Value<bool>() == true;
         public class UserDataManager
         {
             public static void SaveUsers(Dictionary<int, List<object>> usersDataDictionary, string filePath)
@@ -711,20 +736,26 @@ namespace Budżet
             {
                 ImieiNazw = nazwauzytkownia.Text.Trim(),
                 Haslo = haslobox.Text.Trim(),
-                NumerKonta = numer_konta.Text.Trim(),
+                NumerKonta = numer_kontalog.Text.Trim(),
                 Pesel = pesel.Text.Trim(),
             };
             if ((!String.IsNullOrEmpty(nazwauzytkownia.Text)) && haslobox.Text.Length >= 8 && numer_kontalog.Text.Length >= 24 && pesel.Text.Length == 11)
             {
-                users.Add(user);
-                MessageBox.Show("Pomyślnie Utworzono Użytkownika");
+                if (users.Any(u => u.Pesel == pesel.Text))
+                {
+                    MessageBox.Show("Użytkownik o podanym PESEL już istnieje");
+                }
+                else
+                {
+                    users.Add(user);
+                    MessageBox.Show("Pomyślnie Utworzono Użytkownika");
+                }
             }
             else
             {
                 MessageBox.Show("Nie spełniono wymogów");
             }
         }
-        
     }
 
 }
