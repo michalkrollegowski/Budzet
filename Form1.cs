@@ -62,10 +62,7 @@ namespace Budżet
             {
                 MessageBox.Show("Ścieżka pliku jest poprawna");
                 usersDataDictionary = UserDataManager.LoadUsers(filePath);
-                Sciaganieuser(users);
-                Sciaganieprzelew(listaPrzelewow);
-                Sciaganieplacenie(listaPlatnosci);
-                Sciaganieprzelewautom(listaPrzelewowautom);
+                Sciaganie();
                 File.Delete(filePath);
             }
             else
@@ -87,113 +84,102 @@ namespace Budżet
         {
             int key = nextkey++;
 
-            foreach (var user in users)
+            HashSet<object> uniqueValues = new HashSet<object>();
+            var uniqueUsers = users.Distinct();
+            foreach (var user in uniqueUsers)
             {
-                if (!usersDataDictionary.ContainsKey(key))
-                    usersDataDictionary.Add(key, new List<object>());
-
-                if (!usersDataDictionary[key].Contains(user))
-                    usersDataDictionary[key].Add(user);
-
+                if (!uniqueValues.Contains(user))
+                {
+                    uniqueValues.Add(user);
+                }
             }
 
             foreach (var przelew in listaPrzelewow)
             {
-                if (!usersDataDictionary.ContainsKey(key))
-                    usersDataDictionary.Add(key, new List<object>());
-
-                if (!usersDataDictionary[key].Contains(przelew))
-                    usersDataDictionary[key].Add(przelew);
-
+                if (!uniqueValues.Contains(przelew))
+                {
+                    uniqueValues.Add(przelew);
+                }
             }
 
             foreach (var przelewautom in listaPrzelewowautom)
             {
-                if (!usersDataDictionary.ContainsKey(key))
-                    usersDataDictionary.Add(key, new List<object>());
-
-                if (!usersDataDictionary[key].Contains(przelewautom))
-                    usersDataDictionary[key].Add(przelewautom);
-
+                if (!uniqueValues.Contains(przelewautom))
+                {
+                    uniqueValues.Add(przelewautom);
+                }
             }
 
             foreach (var platnosc in listaPlatnosci)
             {
-                if (!usersDataDictionary.ContainsKey(key))
-                    usersDataDictionary.Add(key, new List<object>());
+                if (!uniqueValues.Contains(platnosc))
+                {
+                    uniqueValues.Add(platnosc);
+                }
+            }
 
-                if (!usersDataDictionary[key].Contains(platnosc))
-                    usersDataDictionary[key].Add(platnosc);
+            if (!usersDataDictionary.ContainsKey(key))
+            {
+                usersDataDictionary.Add(key, new List<object>());
+            }
 
+            foreach (var value in uniqueValues)
+            {
+                if (!usersDataDictionary[key].Contains(value))
+                {
+                    usersDataDictionary[key].Add(value);
+                }
             }
 
             return usersDataDictionary;
         }
 
 
-        public void Sciaganieuser(List<user> users)
+        public void Sciaganie()
         {
             foreach (var obiekt in usersDataDictionary)
             {
-                foreach (var item in obiekt.Value)
+                int key = obiekt.Key;
+                List<object> dataList = obiekt.Value;
+                foreach (JObject obj in dataList)
                 {
-                    if (item is IEnumerable<object>)
+                    if (obj is JObject)
                     {
-                        foreach (Object poditem in (IEnumerable<Object>)item)
+                        if (IsValidUserObject(obj))
                         {
-                            if (IsValidUserObject(poditem))
-                            {
-                                user newUser = (user)poditem;
-                                users.Add(newUser);
-                            }
+                            user newUser = obj.ToObject<user>();
+                            users.Add(newUser);
                         }
-                    }
-                    else
-                    {
-                        if (IsValidplatnoscObject(item))
+                        else if (IsValidprzelewObject(obj))
                         {
-                            user newuser = (user) item;
-                            users.Add(newuser);
+                            PrzelewInfo newprzelew = obj.ToObject<PrzelewInfo>();
+                            listaPrzelewow.Add(newprzelew);
                         }
-                    }
-
-                }
-            }
-        }
-
-        private static bool IsValidUserObject(Object obj)=>HasProperty(obj, "ImieiNazw") && HasProperty(obj, "Haslo") && HasProperty(obj,"NumerKonta") && HasProperty(obj,"Pesel");
-        public void Sciaganieprzelew(List<PrzelewInfo> przelew)
-        {
-            foreach (var obiekt in usersDataDictionary)
-            {
-                foreach (var item in obiekt.Value)
-                {
-                    if (item is IEnumerable<object>)
-                    {
-                        foreach (Object poditem in (IEnumerable<Object>)item)
+                        else if (IsValidplatnoscObject(obj))
                         {
-                            if (IsValidprzelewObject(poditem))
-                            {
-                                if ((bool)(poditem.GetType().GetProperty("czyautom").GetValue(false)))
-                                {
-                                    PrzelewInfo newprzelew = (PrzelewInfo)poditem;
-                                    przelew.Add(newprzelew);
-                                }
-                            }
+                            PlacenieInfo newplatnosc = obj.ToObject<PlacenieInfo>();
+                            listaPlatnosci.Add(newplatnosc);
                         }
-                    }
-                    else
-                    {
-                        if (IsValidplatnoscObject(item))
+                        else if (IsValidprzelewautomObject(obj))
                         {
-                            PrzelewInfo newprzelew = (PrzelewInfo) item;
-                            przelew.Add(newprzelew);
+                            PrzelewInfo newplacenieautom = obj.ToObject<PrzelewInfo>();
+                            listaPrzelewowautom.Add(newplacenieautom);
+                        }
+                        else
+                        {
+                            MessageBox.Show("Ma inną wartość" + obj.GetType().ToString());
+                            MessageBox.Show(obj.ToString());
                         }
                     }
                 }
             }
         }
-        public static bool HasProperty(object obj, string propertyName)
+
+        private static bool IsValidUserObject(JObject obj)=>obj["ImieiNazw"] != null && obj["Haslo"]!=null && obj["NumerKonta"]!=null && obj["Pesel"]!=null;
+        private static bool IsValidprzelewObject(JObject obj)=> obj["Nazwa"]!=null &&  obj["Kwota"]!=null && obj["TytulPrzelewu"]!=null && obj["czyautom"].Value<bool>()==false;
+        private static bool IsValidplatnoscObject(JObject obj) => obj["Typplacy"]!=null && obj["Kwota"]!=null;
+        private static bool IsValidprzelewautomObject(JObject obj) => obj["NazwaOdbiorcy"]!=null && obj["Kwota"]!=null && obj["TytulPrzelewu"]!=null && obj["czyautom"].Value<bool>() == true;
+/*        public static bool HasProperty(object obj, string propertyName)
         {
             if (obj == null)
                 return false;
@@ -202,69 +188,7 @@ namespace Budżet
             var property = objectType.GetProperty(propertyName);
 
             return property != null;
-        }
-        private static bool IsValidprzelewObject(Object obj)=> HasProperty(obj,"Nazwa") &&  HasProperty(obj,"Kwota") && HasProperty(obj,"TytulPrzelewu") && HasProperty(obj,"czyautom");
-        public void Sciaganieplacenie(List<PlacenieInfo> platnosc)
-        {
-            foreach (var obiekt in usersDataDictionary)
-            {
-                foreach (var item in obiekt.Value)
-                {
-                    if (item is IEnumerable<object>)
-                    {
-                        foreach (Object poditem in (IEnumerable < Object >) item)
-                        {
-                            if (IsValidplatnoscObject(poditem))
-                            {
-                                PlacenieInfo newplatnosc = (PlacenieInfo)poditem;
-                                platnosc.Add(newplatnosc);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (IsValidplatnoscObject(item))
-                        {
-                            PlacenieInfo newplatnosc = (PlacenieInfo)item;
-                            platnosc.Add(newplatnosc);
-                        }
-                    }
-                }
-            }
-        }
-        private static bool IsValidplatnoscObject(Object obj) => HasProperty(obj,"Typplacy") && HasProperty(obj,"Kwota");
-        public void Sciaganieprzelewautom(List<PrzelewInfo> przelewautom)
-        {
-            foreach (var obiekt in usersDataDictionary)
-            {
-                foreach (var item in obiekt.Value)
-                {
-                    if (item is IEnumerable<object>)
-                    {
-                        foreach (Object poditem in (IEnumerable<Object>)item)
-                        {
-                            if (IsValidprzelewautomObject(poditem))
-                            {
-                                if ((bool)(poditem.GetType().GetProperty("czyautom").GetValue(true)))
-                                {
-                                    PrzelewInfo newplacenieautom = (PrzelewInfo)poditem;
-                                    przelewautom.Add(newplacenieautom);
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (IsValidplatnoscObject(item))
-                        {
-                            PrzelewInfo newprzelew = (PrzelewInfo) item;
-                            przelewautom.Add(newprzelew);
-                        }
-                    }
-                }
-            }
-        }
-        private static bool IsValidprzelewautomObject(Object obj) => HasProperty(obj,"NazwaOdbiorcy") && HasProperty(obj, "Kwota") && HasProperty(obj, "TytulPrzelewu") && HasProperty(obj,"czyautom");
+        }*/
         public class UserDataManager
         {
             public static void SaveUsers(Dictionary<int, List<object>> usersDataDictionary, string filePath)
