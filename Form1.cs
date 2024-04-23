@@ -90,17 +90,16 @@ namespace Budżet
             {
                 usersDataDictionary[key].Add(przelew);
             }
-            key = nextKey++;
+
             foreach (var przelewautom in listaPrzelewowautom)
             {
                 usersDataDictionary[key].Add(przelewautom);
             }
-            key = nextKey++;
+
             foreach (var platnosci in listaPlatnosci)
             {
                 usersDataDictionary[key].Add(platnosci);
             }
-            key = nextKey++;
             foreach (var user in users)
             {
                 usersDataDictionary[key].Add(user);
