@@ -46,8 +46,20 @@ namespace Budżet
             public string Haslo { get; set; }
             public string NumerKonta { get; set; }
             public string Pesel { get; set; }
+            public override bool Equals(object obj)
+            {
+                if (obj == null || GetType() != obj.GetType())
+                    return false;
+
+                user otherUser = (user)obj;
+                return Pesel == otherUser.Pesel && ImieiNazw == otherUser.ImieiNazw;
+            }
+            public override int GetHashCode()
+            {
+                return (ImieiNazw != null ? ImieiNazw.GetHashCode() : 0) ^ (Pesel != null ? Pesel.GetHashCode() : 0);
+            }
         }
-        private List<user> users = new List<user>();
+        private HashSet<user> users = new HashSet<user>();
         private List<PrzelewInfo> listaPrzelewow = new List<PrzelewInfo>();
         private List<PrzelewInfo> listaPrzelewowautom = new List<PrzelewInfo>();
         private List<PlacenieInfo> listaPlatnosci = new List<PlacenieInfo>();
@@ -85,7 +97,7 @@ namespace Budżet
             UserDataManager.SaveUsers(usersDataDictionary, filePath);
         }
 
-        public Dictionary<int, List<object>> Laczenie(Dictionary<int, List<object>> usersDataDictionary)
+        public Dictionary<int, List<object>> Laczenie(Dictionary<int, List<Object>> usersDataDictionary)
         {
             int key = nextkey++;
 
@@ -132,9 +144,17 @@ namespace Budżet
             {
                 if (!usersDataDictionary[key].Contains(value))
                 {
-                    usersDataDictionary[key].Add(value);
+                    if (value is user)
+                    {
+                        foreach (user user in uniqueValues)
+                        {
+                            user.GetHashCode();
+                        }
+                    }
+                   usersDataDictionary[key].Add(value);
                 }
             }
+
             return usersDataDictionary;
         }
 
