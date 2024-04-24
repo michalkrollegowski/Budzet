@@ -77,6 +77,11 @@ namespace Budżet
             string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             string filePath = Path.Combine(documentsPath, "usersDataDictionary.json");
             usersDataDictionary = Laczenie(usersDataDictionary);
+            foreach (List<object> value in usersDataDictionary.Values)
+            {
+                if (value.GetType() is List<user>)
+                    value.Distinct();
+            }
             UserDataManager.SaveUsers(usersDataDictionary, filePath);
         }
 
@@ -130,7 +135,6 @@ namespace Budżet
                     usersDataDictionary[key].Add(value);
                 }
             }
-
             return usersDataDictionary;
         }
 
