@@ -100,12 +100,12 @@ namespace Budżet
         public Dictionary<int, List<object>> Laczenie(Dictionary<int, List<Object>> usersDataDictionary)
         {
             int key = nextkey++;
-
+            usersDataDictionary.Clear();
             HashSet<object> uniqueValues = new HashSet<object>();
             var uniqueUsers = users.Distinct();
             foreach (var user in uniqueUsers)
             {
-                if (!uniqueValues.Contains(user))
+                if (!uniqueValues.Contains(user.Pesel))
                 {
                     uniqueValues.Add(user);
                 }
@@ -148,10 +148,16 @@ namespace Budżet
                     {
                         foreach (user user in uniqueValues)
                         {
-                            user.GetHashCode();
+                            if (!usersDataDictionary[key].Contains(user.Pesel))
+                            {
+                                usersDataDictionary[key].Add(value);
+                            }
                         }
                     }
-                   usersDataDictionary[key].Add(value);
+                    else
+                    {
+                        usersDataDictionary[key].Add(value);
+                    }
                 }
             }
 
@@ -795,6 +801,11 @@ namespace Budżet
             {
                 MessageBox.Show("Nie spełniono wymogów");
             }
+        }
+
+        private void nazwauzytkownia_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 
