@@ -51,7 +51,8 @@ namespace Budżet
         private List<PrzelewInfo> listaPrzelewow = new List<PrzelewInfo>();
         private List<PrzelewInfo> listaPrzelewowautom = new List<PrzelewInfo>();
         private List<PlacenieInfo> listaPlatnosci = new List<PlacenieInfo>();
-        private Dictionary<int, List<object>> usersDataDictionary = new Dictionary<int, List<object>>();
+        //private Dictionary<int, List<object>> usersDataDictionary = new Dictionary<int, List<object>>();
+        public static Dictionary<int, List<object>> usersDataDictionaryStatic = new Dictionary<int, List<object>>();
         private int nextkey = 1;
         private void MainForm_Load(object sender, EventArgs e)
         {
@@ -61,7 +62,7 @@ namespace Budżet
             if (File.Exists(filePath))
             {
                 MessageBox.Show("Ścieżka pliku jest poprawna");
-                usersDataDictionary = UserDataManager.LoadUsers(filePath);
+                usersDataDictionaryStatic = UserDataManager.LoadUsers(filePath);
                 Sciaganie();
                 File.Delete(filePath);
             }
@@ -76,56 +77,65 @@ namespace Budżet
             MessageBox.Show("Dowidzenia :-)");
             string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             string filePath = Path.Combine(documentsPath, "usersDataDictionary.json");
-            usersDataDictionary = Laczenie(usersDataDictionary);
-            UserDataManager.SaveUsers(usersDataDictionary, filePath);
+            usersDataDictionaryStatic = Laczenie(usersDataDictionaryStatic);
+            UserDataManager.SaveUsers(usersDataDictionaryStatic, filePath);
         }
 
         public Dictionary<int, List<object>> Laczenie(Dictionary<int, List<object>> usersDataDictionary)
         {
             int key = nextkey++;
-
-            HashSet<object> uniqueValues = new HashSet<object>();
+            int numer = 1;
+            Dictionary<int,object> uniqueValues = new Dictionary<int, object>();
             var uniqueUsers = users.Distinct();
-            foreach (var user in uniqueUsers)
+            foreach (object user in uniqueUsers)
             {
-                if (!uniqueValues.Contains(user))
+                if (!uniqueValues.ContainsKey(numer))
                 {
-                    uniqueValues.Add(user);
+                    if (!uniqueValues.ContainsValue(user))
+                    {
+                        uniqueValues.Add(numer, user);
+                        numer++;
+                    }
                 }
             }
 
             foreach (var przelew in listaPrzelewow)
             {
-                if (!uniqueValues.Contains(przelew))
+                if (!uniqueValues.Contains(numer,przelew))
                 {
-                    uniqueValues.Add(przelew);
+                    usersDataDictionaryStatic.Add(numer,przelew);
+                    numer++;
                 }
             }
 
             foreach (var przelewautom in listaPrzelewowautom)
             {
-                if (!uniqueValues.Contains(przelewautom))
+                if (!uniqueValues.Contains(numer,przelewautom))
                 {
-                    uniqueValues.Add(przelewautom);
+                    uniqueValues.Add(numer,przelewautom);
+                    numer++;
                 }
             }
 
             foreach (var platnosc in listaPlatnosci)
             {
-                if (!uniqueValues.Contains(platnosc))
+                if (!uniqueValues.Contains(numer,platnosc))
                 {
-                    uniqueValues.Add(platnosc);
+                    uniqueValues.Add(numer,platnosc);
+                    numer++;
                 }
             }
 
             if (!usersDataDictionary.ContainsKey(key))
             {
                 usersDataDictionary.Add(key, new List<object>());
+                numer++;
             }
 
             foreach (var value in uniqueValues)
             {
-                if (!usersDataDictionary[key].Contains(value))
+         
+                if (!usersDataDictionary[key].Contains(value.ToString()))
                 {
                     usersDataDictionary[key].Add(value);
                 }
@@ -137,7 +147,7 @@ namespace Budżet
 
         public void Sciaganie()
         {
-            foreach (var obiekt in usersDataDictionary)
+            foreach (var obiekt in usersDataDictionaryStatic)
             {
                 int key = obiekt.Key;
                 List<object> dataList = obiekt.Value;
@@ -179,16 +189,6 @@ namespace Budżet
         private static bool IsValidprzelewObject(JObject obj)=> obj["Nazwa"]!=null &&  obj["Kwota"]!=null && obj["TytulPrzelewu"]!=null && obj["czyautom"].Value<bool>()==false;
         private static bool IsValidplatnoscObject(JObject obj) => obj["Typplacy"]!=null && obj["Kwota"]!=null;
         private static bool IsValidprzelewautomObject(JObject obj) => obj["NazwaOdbiorcy"]!=null && obj["Kwota"]!=null && obj["TytulPrzelewu"]!=null && obj["czyautom"].Value<bool>() == true;
-/*        public static bool HasProperty(object obj, string propertyName)
-        {
-            if (obj == null)
-                return false;
-
-            var objectType = obj.GetType();
-            var property = objectType.GetProperty(propertyName);
-
-            return property != null;
-        }*/
         public class UserDataManager
         {
             public static void SaveUsers(Dictionary<int, List<object>> usersDataDictionary, string filePath)
