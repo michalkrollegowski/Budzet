@@ -771,6 +771,7 @@
             this.nazwauzytkownia.TabIndex = 3;
             this.podp.SetToolTip(this.nazwauzytkownia, "Podaj pesel");
             this.nazwauzytkownia.Visible = false;
+            this.nazwauzytkownia.TextChanged += new System.EventHandler(this.nazwauzytkownia_TextChanged);
             // 
             // haslobox
             // 

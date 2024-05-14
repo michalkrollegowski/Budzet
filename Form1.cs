@@ -46,8 +46,20 @@ namespace Budżet
             public string Haslo { get; set; }
             public string NumerKonta { get; set; }
             public string Pesel { get; set; }
+            public override bool Equals(object obj)
+            {
+                if (obj == null || GetType() != obj.GetType())
+                    return false;
+
+                user otherUser = (user)obj;
+                return Pesel == otherUser.Pesel && ImieiNazw == otherUser.ImieiNazw;
+            }
+            public override int GetHashCode()
+            {
+                return (ImieiNazw != null ? ImieiNazw.GetHashCode() : 0) ^ (Pesel != null ? Pesel.GetHashCode() : 0);
+            }
         }
-        private List<user> users = new List<user>();
+        private HashSet<user> users = new HashSet<user>();
         private List<PrzelewInfo> listaPrzelewow = new List<PrzelewInfo>();
         private List<PrzelewInfo> listaPrzelewowautom = new List<PrzelewInfo>();
         private List<PlacenieInfo> listaPlatnosci = new List<PlacenieInfo>();
@@ -81,7 +93,7 @@ namespace Budżet
             UserDataManager.SaveUsers(usersDataDictionaryStatic, filePath);
         }
 
-        public Dictionary<int, List<object>> Laczenie(Dictionary<int, List<object>> usersDataDictionary)
+        public Dictionary<int, List<object>> Laczenie(Dictionary<int, List<Object>> usersDataDictionary)
         {
             int key = nextkey++;
             int numer = 1;
@@ -137,7 +149,20 @@ namespace Budżet
          
                 if (!usersDataDictionary[key].Contains(value.ToString()))
                 {
-                    usersDataDictionary[key].Add(value);
+                    if (value is user)
+                    {
+                        foreach (user user in uniqueValues)
+                        {
+                            if (!usersDataDictionary[key].Contains(user.Pesel))
+                            {
+                                usersDataDictionary[key].Add(value);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        usersDataDictionary[key].Add(value);
+                    }
                 }
             }
 
@@ -771,6 +796,11 @@ namespace Budżet
             {
                 MessageBox.Show("Nie spełniono wymogów");
             }
+        }
+
+        private void nazwauzytkownia_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 
