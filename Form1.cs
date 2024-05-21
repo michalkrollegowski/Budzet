@@ -11,10 +11,10 @@ using System.Windows.Forms;
 using static Budżet.Form1;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using TextBox = System.Windows.Forms.TextBox;
-using Newtonsoft.Json;
 using System.IO;
-using Newtonsoft.Json.Linq;
 using System.Xml.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Budżet
 {
@@ -63,8 +63,7 @@ namespace Budżet
         private List<PrzelewInfo> listaPrzelewow = new List<PrzelewInfo>();
         private List<PrzelewInfo> listaPrzelewowautom = new List<PrzelewInfo>();
         private List<PlacenieInfo> listaPlatnosci = new List<PlacenieInfo>();
-        //private Dictionary<int, List<object>> usersDataDictionary = new Dictionary<int, List<object>>();
-        public static Dictionary<int, List<object>> usersDataDictionaryStatic = new Dictionary<int, List<object>>();
+        private Dictionary<int, List<object>> usersDataDictionary = new Dictionary<int, List<object>>();
         private int nextkey = 1;
         private void MainForm_Load(object sender, EventArgs e)
         {
@@ -74,7 +73,7 @@ namespace Budżet
             if (File.Exists(filePath))
             {
                 MessageBox.Show("Ścieżka pliku jest poprawna");
-                usersDataDictionaryStatic = UserDataManager.LoadUsers(filePath);
+                usersDataDictionary = UserDataManager.LoadUsers(filePath);
                 Sciaganie();
                 File.Delete(filePath);
             }
@@ -89,59 +88,50 @@ namespace Budżet
             MessageBox.Show("Dowidzenia :-)");
             string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             string filePath = Path.Combine(documentsPath, "usersDataDictionary.json");
-            usersDataDictionaryStatic = Laczenie(usersDataDictionaryStatic);
-            UserDataManager.SaveUsers(usersDataDictionaryStatic, filePath);
+            usersDataDictionary = Laczenie(usersDataDictionary);
+            UserDataManager.SaveUsers(usersDataDictionary, filePath);
         }
 
         public Dictionary<int, List<object>> Laczenie(Dictionary<int, List<Object>> usersDataDictionary)
         {
             int key = nextkey++;
-            int numer = 1;
-            Dictionary<int,object> uniqueValues = new Dictionary<int, object>();
+            HashSet<object> uniqueValues = new HashSet<object>();
             var uniqueUsers = users.Distinct();
             foreach (object user in uniqueUsers)
             {
-                if (!uniqueValues.ContainsKey(numer))
-                {
-                    if (!uniqueValues.ContainsValue(user))
+                    if (!uniqueValues.Contains(user))
                     {
-                        uniqueValues.Add(numer, user);
-                        numer++;
+                        uniqueValues.Add(user);
                     }
-                }
             }
 
             foreach (var przelew in listaPrzelewow)
             {
-                if (!uniqueValues.Contains(numer,przelew))
+                if (!uniqueValues.Contains(przelew))
                 {
-                    usersDataDictionaryStatic.Add(numer,przelew);
-                    numer++;
+                    usersDataDictionary.Add(przelew);
                 }
             }
 
             foreach (var przelewautom in listaPrzelewowautom)
             {
-                if (!uniqueValues.Contains(numer,przelewautom))
+                if (!uniqueValues.Contains(przelewautom))
                 {
-                    uniqueValues.Add(numer,przelewautom);
-                    numer++;
+                    uniqueValues.Add(przelewautom);
                 }
             }
 
             foreach (var platnosc in listaPlatnosci)
             {
-                if (!uniqueValues.Contains(numer,platnosc))
+                if (!uniqueValues.Contains(platnosc))
                 {
-                    uniqueValues.Add(numer,platnosc);
-                    numer++;
+                    uniqueValues.Add(platnosc);
                 }
             }
 
             if (!usersDataDictionary.ContainsKey(key))
             {
                 usersDataDictionary.Add(key, new List<object>());
-                numer++;
             }
 
             foreach (var value in uniqueValues)
@@ -172,7 +162,7 @@ namespace Budżet
 
         public void Sciaganie()
         {
-            foreach (var obiekt in usersDataDictionaryStatic)
+            foreach (var obiekt in usersDataDictionary)
             {
                 int key = obiekt.Key;
                 List<object> dataList = obiekt.Value;
